@@ -1,5 +1,6 @@
-import sbt.Keys.libraryDependencies
-import sbt._
+import sbt.Keys.*
+import sbt.*
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 
 object Dependencies extends AutoPlugin {
 
@@ -13,25 +14,25 @@ object Dependencies extends AutoPlugin {
   }
 
   object Version {
-    val cats = "2.6.1"
+    val cats = "2.12.0"
     val catsEffect = "3.2.3"
-    val scalaTest = "3.2.9"
-    val scalaCheck = "1.14.3"
-    val scalatTestPlus = "3.2.0.0"
+    val scalaTest = "3.2.19"
+    val scalaCheck = "1.15.4"
+    val scalatTestPlus = "3.2.19.0"
   }
 
   lazy val deps = Def.setting(
     Seq(
-      "org.typelevel" %% "cats-core" % Version.cats,
-      "org.typelevel" %% "cats-effect" % Version.catsEffect
+      "org.typelevel" %%% "cats-core" % Version.cats,
+      "org.typelevel" %%% "cats-effect" % Version.catsEffect
     )
   )
 
   lazy val testDeps = Def.setting(
     Seq(
-      "org.scalatest" %% "scalatest" % Version.scalaTest,
+      "org.scalatest" %%% "scalatest" % Version.scalaTest,
       "org.scalacheck" %% "scalacheck" % Version.scalaCheck,
-      "org.scalatestplus" %% "scalacheck-1-14" % Version.scalatTestPlus
+      "org.scalatestplus" %% "scalacheck-1-18" % Version.scalatTestPlus
     ).map(_ % Test)
   )
 }
