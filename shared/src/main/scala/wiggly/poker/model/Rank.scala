@@ -1,5 +1,6 @@
-package wiggly.poker
+package wiggly.poker.model
 
+import cats.Order
 import cats.Show
 
 enum Rank {
@@ -35,4 +36,7 @@ object Rank {
       case King  => "K"
       case Ace   => "A"
   }
+
+  given orderRank: Order[Rank] =
+    Order.by(_.ordinal)
 }

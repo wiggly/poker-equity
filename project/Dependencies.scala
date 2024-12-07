@@ -14,11 +14,11 @@ object Dependencies extends AutoPlugin {
   }
 
   object Version {
-    val cats = "2.12.0"
-    val catsEffect = "3.2.3"
-    val scalaTest = "3.2.19"
+    val cats = "2.11.0"
+    val catsEffect = "3.5.6"
+    val scalaTest = "3.2.18"
     val scalaCheck = "1.15.4"
-    val scalatTestPlus = "3.2.19.0"
+    val scalatTestPlus = "3.2.18.0"
   }
 
   lazy val deps = Def.setting(

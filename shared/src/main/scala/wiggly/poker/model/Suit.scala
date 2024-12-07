@@ -1,4 +1,4 @@
-package wiggly.poker
+package wiggly.poker.model
 
 import cats.Show
 
