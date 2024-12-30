@@ -67,7 +67,9 @@ class ImprovedSimpleEquityCalculator extends EquityCalculator {
     println(s"stub length: ${stub.toList.size}")
 
     // generate permutations of stub to generate boards and generate an equity result for the hole cards for that board
-    val xxx: (Equity, Equity) = stub.toList
+    val xxx: (Equity, Equity) = stub
+      .toList
+      .sorted
       .combinations(cardsRequired)
       .take(count)
       .map(extraBoard => {
@@ -84,7 +86,7 @@ class ImprovedSimpleEquityCalculator extends EquityCalculator {
       b: HoleCards,
       board: Set[Card]
   ): (Equity, Equity) = {
-    import SimpleEquityCalculator.orderPokerHand
+    import ImprovedSimpleEquityCalculator.orderPokerHand
 
     val bestA = PokerHand.fromIterable(a.cards ++ board).max
 
@@ -155,15 +157,15 @@ object ImprovedSimpleEquityCalculator {
         HighCard
       }
     } else {
-      if (isPokerHandFourOfAKind(hand)) {
+      if (isPokerHandFourOfAKind(rt)(hand)) {
         FourOfAKind
-      } else if (isPokerHandFullHouse(hand)) {
+      } else if (isPokerHandFullHouse(rt)(hand)) {
         FullHouse
-      } else if (isPokerHandThreeOfAKind(hand)) {
+      } else if (isPokerHandThreeOfAKind(rt)(hand)) {
         ThreeOfAKind
       } else {
         TwoPair
-      } 
+      }
     }
   }
 
@@ -171,16 +173,11 @@ object ImprovedSimpleEquityCalculator {
     isPokerHandFlush(hand) && isPokerHandStraight(hand)
   }
 
-  private def isPokerHandFourOfAKind(hand: PokerHand): Boolean = {
-    hand.toList
-      .groupBy(_.rank)
-      .map(item => (item._1, item._2.size))
-      .values
-      .exists(_ == 4)
-  }
+  private def isPokerHandFourOfAKind(rt: Map[Rank,Int])(hand: PokerHand): Boolean =
+    rt.values.exists(_ == 4)
 
-  private def isPokerHandFullHouse(hand: PokerHand): Boolean = {
-    isPokerHandThreeOfAKind(hand) && (hand.toSet.map(_.rank).size == 2)
+  private def isPokerHandFullHouse(rt: Map[Rank,Int])(hand: PokerHand): Boolean = {
+    rt.values.exists(_ == 3) && rt.values.exists(_ == 2)
   }
 
   private def isPokerHandFlush(hand: PokerHand): Boolean = {
@@ -191,19 +188,14 @@ object ImprovedSimpleEquityCalculator {
     straightCards.contains(hand.toSet.map(_.rank))
   }
 
-  private def isPokerHandThreeOfAKind(hand: PokerHand): Boolean = {
-    hand.toList
-      .groupBy(_.rank)
-      .map(item => (item._1, item._2.size))
-      .values
-      .exists(_ == 3)
-  }
+  private def isPokerHandThreeOfAKind(rt: Map[Rank,Int])(hand: PokerHand): Boolean =
+    rt.values.exists(_ == 3)
 
-  private def isPokerHandTwoPair(hand: PokerHand): Boolean =
-    ranksForCount(hand, 2).size == 2
+  private def isPokerHandTwoPair(rt: Map[Rank,Int])(hand: PokerHand): Boolean =
+    rt.count((_, actualCount) => actualCount == 2) == 2
 
-  private def isPokerHandPair(hand: PokerHand): Boolean =
-    ranksForCount(hand, 2).size == 1
+  private def isPokerHandPair(rt: Map[Rank,Int])(hand: PokerHand): Boolean =
+    rt.count((_, actualCount) => actualCount == 2) == 1
 
   private val straightCards: List[Set[Rank]] = List(
     Set(Rank.Ace, Rank.Two, Rank.Three, Rank.Four, Rank.Five),

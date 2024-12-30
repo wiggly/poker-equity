@@ -1,5 +1,6 @@
 package wiggly.poker.model
 
+import cats.Order
 import cats.Show
 
 enum Suit {
@@ -17,4 +18,7 @@ object Suit {
       case Diamond => "d"
       case Club    => "c"
   }
+
+  given orderSuit: Order[Suit] =
+    Order.by(_.ordinal)
 }

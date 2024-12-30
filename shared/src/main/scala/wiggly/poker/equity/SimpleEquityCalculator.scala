@@ -67,7 +67,9 @@ class SimpleEquityCalculator extends EquityCalculator {
     println(s"stub length: ${stub.toList.size}")
 
     // generate permutations of stub to generate boards and generate an equity result for the hole cards for that board
-    val xxx: (Equity, Equity) = stub.toList
+    val xxx: (Equity, Equity) = stub
+      .toList
+      .sorted
       .combinations(cardsRequired)
       .take(count)
       .map(extraBoard => {

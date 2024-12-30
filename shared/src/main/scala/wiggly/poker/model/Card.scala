@@ -1,5 +1,6 @@
 package wiggly.poker.model
 
+import cats.Order
 import cats.Show
 import cats.implicits.*
 import wiggly.poker.instances.SuitInstances
@@ -134,4 +135,16 @@ object Card {
   given showCard: Show[Card] = new Show[Card] {
     override def show(t: Card): String = s"${t.rank.show}${t.suit.show}"
   }
+
+  given orderCard: Order[Card] = new Order[Card] {
+    override def compare(x: Card, y: Card): Int = {
+      val rankOrder = Order.compare(x.rank, y.rank)
+      if(rankOrder == 0) {
+        Order.compare(x.suit, y.suit)
+      } else {
+        rankOrder
+      }
+    }
+  }
+
 }

@@ -17,7 +17,11 @@ lazy val root = crossProject(JVMPlatform, NativePlatform)
   .in(file("."))
   .settings(sharedSettings)
   .jvmConfigure(
-      _.withDependencies
+      _
+        .withDependencies
+        .settings(  assembly / mainClass := Some("Main"),
+        assembly / assemblyJarName := "wpe.jar"
+      )
   )
   .nativeConfigure(
       _.withDependencies
