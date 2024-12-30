@@ -28,7 +28,7 @@ import wiggly.poker.model.PokerRankCategory.{
 
 import math.BigDecimal.int2bigDecimal
 
-class SimpleEquityCalculator extends EquityCalculator {
+class ImprovedSimpleEquityCalculator extends EquityCalculator {
 
   override def calculate(
       a: HoleCards,
@@ -60,8 +60,8 @@ class SimpleEquityCalculator extends EquityCalculator {
     val maxBoards = MathUtil.nCombK(stub.size.toBigInt, cardsRequired).toInt
 
     // number of boards we intend to evaluate - this should be a parameter?
-//    val count = maxBoards / 3
-//    val count = maxBoards / 5
+    //    val count = maxBoards / 3
+    //    val count = maxBoards / 5
     val count = 50000
 
     println(s"stub length: ${stub.toList.size}")
@@ -102,11 +102,11 @@ class SimpleEquityCalculator extends EquityCalculator {
   }
 }
 
-object SimpleEquityCalculator {
+object ImprovedSimpleEquityCalculator {
 
   given orderPokerHand: Order[PokerHand] = new Order[PokerHand] {
     override def compare(a: PokerHand, b: PokerHand): Int = {
-  //    println("--------------------------------------------------------------------------")
+      //    println("--------------------------------------------------------------------------")
       val prca = pokerHandCategory(a)
       val prcb = pokerHandCategory(b)
 
@@ -115,49 +115,55 @@ object SimpleEquityCalculator {
       if (phrc == 0) {
         val xxx = prca match {
           case StraightFlush => compareStraightFlush(a, b)
-          case FourOfAKind => compareFourOfAKind(a, b)
-          case FullHouse => compareFullHouse(a, b)
-          case Flush => compareFlush(a, b)
-          case Straight => compareStraight(a, b)
-          case ThreeOfAKind => compareThreeOfAKind(a, b)
-          case TwoPair => compareTwoPair(a, b)
-          case Pair => comparePair(a, b)
-          case HighCard => compareHighCard(a, b)
+          case FourOfAKind   => compareFourOfAKind(a, b)
+          case FullHouse     => compareFullHouse(a, b)
+          case Flush         => compareFlush(a, b)
+          case Straight      => compareStraight(a, b)
+          case ThreeOfAKind  => compareThreeOfAKind(a, b)
+          case TwoPair       => compareTwoPair(a, b)
+          case Pair          => comparePair(a, b)
+          case HighCard      => compareHighCard(a, b)
         }
-/*
-        if(xxx == 0) {
-          println(s"EXACT SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
-        } else {
-          println(s"SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
-        }
-*/
+        /*
+                if(xxx == 0) {
+                  println(s"EXACT SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
+                } else {
+                  println(s"SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
+                }
+         */
         xxx
       } else {
-//        println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.show}\n\t${b.show}")
+        //        println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.show}\n\t${b.show}")
         phrc
       }
     }
   }
 
   private def pokerHandCategory(hand: PokerHand): PokerRankCategory = {
-    if (isPokerHandStraightFlush(hand)) {
-      StraightFlush
-    } else if (isPokerHandFourOfAKind(hand)) {
-      FourOfAKind
-    } else if (isPokerHandFullHouse(hand)) {
-      FullHouse
-    } else if (isPokerHandFlush(hand)) {
-      Flush
-    } else if (isPokerHandStraight(hand)) {
-      Straight
-    } else if (isPokerHandThreeOfAKind(hand)) {
-      ThreeOfAKind
-    } else if (isPokerHandTwoPair(hand)) {
-      TwoPair
-    } else if (isPokerHandPair(hand)) {
-      Pair
+    val rt = rankTally(hand)
+
+    if (rt.size == 5) {
+      if (isPokerHandFlush(hand)) {
+        if (isPokerHandStraight(hand)) {
+          StraightFlush
+        } else {
+          Flush
+        }
+      } else if (isPokerHandStraight(hand)) {
+        Straight
+      } else {
+        HighCard
+      }
     } else {
-      HighCard
+      if (isPokerHandFourOfAKind(hand)) {
+        FourOfAKind
+      } else if (isPokerHandFullHouse(hand)) {
+        FullHouse
+      } else if (isPokerHandThreeOfAKind(hand)) {
+        ThreeOfAKind
+      } else {
+        TwoPair
+      } 
     }
   }
 
@@ -214,8 +220,9 @@ object SimpleEquityCalculator {
 
   private def compareStraightFlush(a: PokerHand, b: PokerHand): Int = {
     Order.compare(
-    straightCards.indexOf(a.toSet.map(_.rank)),
-    straightCards.indexOf(b.toSet.map(_.rank)))
+      straightCards.indexOf(a.toSet.map(_.rank)),
+      straightCards.indexOf(b.toSet.map(_.rank))
+    )
   }
 
   private def compareFourOfAKind(a: PokerHand, b: PokerHand): Int = {
@@ -233,14 +240,19 @@ object SimpleEquityCalculator {
 
       b4 <- gb.find(item => item._2 == 4).map(_._1)
       b1 <- gb.find(item => item._2 == 1).map(_._1)
-      result = if(a4 == b4) {
-        Order.compare(a1, b1)
-      } else {
-        Order.compare(a4, b4)
-      }
+      result =
+        if (a4 == b4) {
+          Order.compare(a1, b1)
+        } else {
+          Order.compare(a4, b4)
+        }
     } yield result
 
-    result.getOrElse(throw new Exception("Cannot happen unless this function is fed a non Quads hand"))
+    result.getOrElse(
+      throw new Exception(
+        "Cannot happen unless this function is fed a non Quads hand"
+      )
+    )
   }
 
   private def compareFullHouse(a: PokerHand, b: PokerHand): Int = {
@@ -253,12 +265,14 @@ object SimpleEquityCalculator {
       .map(item => (item._1, item._2.size))
 
     val tripCmp: Option[Int] = for {
-      tripRankA <- tallyA.find( (_,count) => count == 3).map(_._1.ordinal) // TODO: remove ordinal from this
-      tripRankB <- tallyB.find( (_,count) => count == 3).map(_._1.ordinal)
+      tripRankA <- tallyA
+        .find((_, count) => count == 3)
+        .map(_._1.ordinal) // TODO: remove ordinal from this
+      tripRankB <- tallyB.find((_, count) => count == 3).map(_._1.ordinal)
     } yield tripRankA.compare(tripRankB)
 
     // trips are the same
-    if(tripCmp.contains(0)) {
+    if (tripCmp.contains(0)) {
       val pa = tallyA.filter(_._2 == 2).map(x => x._1.ordinal)
       val pb = tallyB.filter(_._2 == 2).map(x => x._1.ordinal)
       pa
@@ -278,7 +292,7 @@ object SimpleEquityCalculator {
     )
 
   private def compareStraight(a: PokerHand, b: PokerHand): Int = {
-//    println(s"compare straight indexA: ${straightCards.indexOf(a.toSet.map(_.rank))} - indexB: ${straightCards.indexOf(b.toSet.map(_.rank))}")
+    //    println(s"compare straight indexA: ${straightCards.indexOf(a.toSet.map(_.rank))} - indexB: ${straightCards.indexOf(b.toSet.map(_.rank))}")
 
     Order.compare(
       straightCards.indexOf(a.toSet.map(_.rank)),
@@ -293,15 +307,18 @@ object SimpleEquityCalculator {
     val tripCmp = (for {
       tripA <- maybeTripA
       tripB <- maybeTripB
-      result = if(Order.eqv(tripA, tripB)) {
-        compareRankList(
-          a.toList.map(_.rank).filterNot(_ == tripA),
-          b.toList.map(_.rank).filterNot(_ == tripB)
-        )
-      } else {
-        Order.compare(tripA, tripB)
-      }
-    } yield result).getOrElse(throw new Exception("Three of a kind does not contain three of a kind"))
+      result =
+        if (Order.eqv(tripA, tripB)) {
+          compareRankList(
+            a.toList.map(_.rank).filterNot(_ == tripA),
+            b.toList.map(_.rank).filterNot(_ == tripB)
+          )
+        } else {
+          Order.compare(tripA, tripB)
+        }
+    } yield result).getOrElse(
+      throw new Exception("Three of a kind does not contain three of a kind")
+    )
 
     tripCmp
   }
@@ -312,7 +329,7 @@ object SimpleEquityCalculator {
 
     val pairsCmp = compareRankList(pairsA, pairsB)
 
-    if(pairsCmp == 0) {
+    if (pairsCmp == 0) {
       compareRankList(
         a.toList.map(_.rank).filterNot(pairsA.contains),
         b.toList.map(_.rank).filterNot(pairsB.contains)
@@ -328,7 +345,7 @@ object SimpleEquityCalculator {
 
     val pairsCmp = compareRankList(pairsA, pairsB)
 
-    if(pairsCmp == 0) {
+    if (pairsCmp == 0) {
       compareRankList(
         a.toList.map(_.rank).filterNot(pairsA.contains),
         b.toList.map(_.rank).filterNot(pairsB.contains)
@@ -341,13 +358,13 @@ object SimpleEquityCalculator {
   private def compareHighCard(a: PokerHand, b: PokerHand): Int =
     compareRankList(a.toList.map(_.rank), b.toList.map(_.rank))
 
-  private def rankTally(x: PokerHand): Map[Rank,Int] =
+  private def rankTally(x: PokerHand): Map[Rank, Int] =
     x.toList
       .groupBy(_.rank)
       .map(item => (item._1, item._2.size))
 
   private def ranksForCount(x: PokerHand, count: Int): List[Rank] =
-    rankTally(x).filter( (_,actualCount) => actualCount == count).keys.toList
+    rankTally(x).filter((_, actualCount) => actualCount == count).keys.toList
 
   private def rankForCount(x: PokerHand, count: Int): Option[Rank] =
     ranksForCount(x, count).ensuring(_.length < 2).headOption
@@ -357,7 +374,7 @@ object SimpleEquityCalculator {
     val rb = b.map(_.ordinal).sorted
     ra
       .zip(rb)
-      .map( (oa, ob) => oa - ob)
+      .map((oa, ob) => oa - ob)
       .find(n => n != 0)
       .getOrElse(0)
   }

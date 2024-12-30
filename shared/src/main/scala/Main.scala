@@ -5,7 +5,8 @@ import wiggly.poker.model.{Card, HoleCards, Rank, Suit}
 
 object Main extends App {
   //val calc = new DummyEquityCalculator()
-  val calc = new SimpleEquityCalculator()
+  //val calc = new SimpleEquityCalculator()
+  val calc = new ImprovedSimpleEquityCalculator()
 
   val result = for {
     a <- HoleCards.create(
