@@ -15,6 +15,14 @@ trait PokerHandOrderExamples {
 
   val greaterThanExamples: TableFor2[String, String] = Table(
     ("a", "b"),
+
+    // Parity failures
+    ("7sAh5sAc4h", "7dAcTh4dJd"),
+    ("5hAs6h5d9h", "2s8c5d7s4d"),
+    ("Jd7hJh7cQd", "AhQdQhTd8c"),
+    ("7sKd8c5h4d", "7s9h8hQd4d"),
+    ("6cAc5c7d7c", "Jc6c8d7d7h"),
+
     // Straight Flush vs Straight Flush
     ("AsKsQsJsTs", "KsQsJsTs9s"),
     ("AsKsQsJsTs", "As2s3s4s5s"),
@@ -39,6 +47,7 @@ trait PokerHandOrderExamples {
     // Flush vs Flush
     ("AsKsQs8s7s", "AsKsQs7s6s"),
     ("KsQs9s8s7s", "KsQs8s7s6s"),
+    ("AsKs8s4s3s", "AsQs8s4s3s"),
 
     // Straight vs Straight
     ("AsKcQsJhTs", "KsQcJsTh9s"),
@@ -68,12 +77,28 @@ trait PokerHandOrderExamples {
     ("Qs4hTd9c2s", "Ts8hQd3c2s"),
     ("Qs3hTd9cAs", "Ts8hQd3c2s"),
     ("Ks3hTd9c2s", "Ts8hQd3c2s")
+
+  
+  )
+
+
+  val generatedEqualExamples: List[(String, String)] =
+    greaterThanExamples.toList.flatMap(pair =>
+      List((pair._1, pair._1), (pair._2, pair._2))
+    )
+
+  val curatedEqualExamples: List[(String, String)] = List(
+    ("AsKsQsJsTs", "AcKcQcJcTc"),
+    ("JsAsQsKsTs", "QcJcTcAcKc"),
+    ("9dThKc2s3d", "2h9sTcKd3s"),
+    ("KsQs8s4s3s", "KdQd8d4d3d"),
+    ("AsAd8s5sAc", "AhAc8c5dAd")
   )
 
   val equalExamples: TableFor2[String, String] =
     Table(
       ("a", "b"),
-      greaterThanExamples.toList.flatMap(pair => List((pair._1, pair._1), (pair._2, pair._2))):_*
+      (generatedEqualExamples ++ curatedEqualExamples): _*
     )
 
   def testOrder(
@@ -82,14 +107,7 @@ trait PokerHandOrderExamples {
       predicate: Int => Boolean
   ): Assertion = {
     val input = parseExample(example)
-//    println(s"test example: ${example._1} vs ${example._2}")
-
-//    println(s"test input: ${input._1.show} vs ${input._2.show}")
-
     val oc = order.compare(input._1, input._2)
-
-//    println(s"oc: ${oc}")
-
     predicate(order.compare(input._1, input._2)) shouldEqual (true)
   }
 

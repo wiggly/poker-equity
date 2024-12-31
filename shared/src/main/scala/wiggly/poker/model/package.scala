@@ -74,6 +74,28 @@ package object model {
       def toSet: Set[Card] = Set(hand._1, hand._2, hand._3, hand._4, hand._5)
 
       def toList: List[Card] = List(hand._1, hand._2, hand._3, hand._4, hand._5)
+
+      def suits: List[Suit] = List(
+        hand._1.suit,
+        hand._2.suit,
+        hand._3.suit,
+        hand._4.suit,
+        hand._5.suit
+      )
+
+      def ranks: List[Rank] = List(
+        hand._1.rank,
+        hand._2.rank,
+        hand._3.rank,
+        hand._4.rank,
+        hand._5.rank
+      )
+
+      def first: Card = hand._1
+      def second: Card = hand._2
+      def third: Card = hand._3
+      def fourth: Card = hand._4
+      def fifth: Card = hand._5
     }
 
     def fromCards(

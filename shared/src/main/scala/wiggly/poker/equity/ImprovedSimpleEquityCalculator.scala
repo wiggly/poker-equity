@@ -62,17 +62,18 @@ class ImprovedSimpleEquityCalculator extends EquityCalculator {
     // number of boards we intend to evaluate - this should be a parameter?
     //    val count = maxBoards / 3
     //    val count = maxBoards / 5
-    val count = 50000
+    // val count = 5000
+    val count = EquityCalculator.defaultRunSize
+    // val count = 15000
 
     println(s"stub length: ${stub.toList.size}")
 
     // generate permutations of stub to generate boards and generate an equity result for the hole cards for that board
-    val xxx: (Equity, Equity) = stub
-      .toList
-      .sorted
+    val xxx: (Equity, Equity) = stub.toList.sorted
       .combinations(cardsRequired)
       .take(count)
       .map(extraBoard => {
+        // System.err.println(extraBoard.map(_.show).mkString);
         generateBoardEquityResult(a, b, board ++ extraBoard)
       })
       .toList
@@ -109,8 +110,10 @@ object ImprovedSimpleEquityCalculator {
   given orderPokerHand: Order[PokerHand] = new Order[PokerHand] {
     override def compare(a: PokerHand, b: PokerHand): Int = {
       //    println("--------------------------------------------------------------------------")
-      val prca = pokerHandCategory(a)
-      val prcb = pokerHandCategory(b)
+      val rta = rankTally(a)
+      val prca = pokerHandCategory(rta)(a)
+      val rtb = rankTally(b)
+      val prcb = pokerHandCategory(rtb)(b)
 
       val phrc = PokerRankCategory.orderPokerRankCategory.compare(prca, prcb)
 
@@ -122,7 +125,7 @@ object ImprovedSimpleEquityCalculator {
           case Flush         => compareFlush(a, b)
           case Straight      => compareStraight(a, b)
           case ThreeOfAKind  => compareThreeOfAKind(a, b)
-          case TwoPair       => compareTwoPair(a, b)
+          case TwoPair       => compareTwoPair(rta, rtb)(a, b)
           case Pair          => comparePair(a, b)
           case HighCard      => compareHighCard(a, b)
         }
@@ -135,15 +138,15 @@ object ImprovedSimpleEquityCalculator {
          */
         xxx
       } else {
-        //        println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.show}\n\t${b.show}")
+        //           println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.show}\n\t${b.show}")
         phrc
       }
     }
   }
 
-  private def pokerHandCategory(hand: PokerHand): PokerRankCategory = {
-    val rt = rankTally(hand)
-
+  private def pokerHandCategory(
+      rt: Map[Rank, Int]
+  )(hand: PokerHand): PokerRankCategory = {
     if (rt.size == 5) {
       if (isPokerHandFlush(hand)) {
         if (isPokerHandStraight(hand)) {
@@ -163,38 +166,51 @@ object ImprovedSimpleEquityCalculator {
         FullHouse
       } else if (isPokerHandThreeOfAKind(rt)(hand)) {
         ThreeOfAKind
-      } else {
+      } else if (isPokerHandTwoPair(rt)(hand)) {
         TwoPair
+      } else if (isPokerHandPair(rt)(hand)) {
+        Pair
+      } else {
+        HighCard
       }
     }
   }
-
+  /*
   private def isPokerHandStraightFlush(hand: PokerHand): Boolean = {
     isPokerHandFlush(hand) && isPokerHandStraight(hand)
   }
-
-  private def isPokerHandFourOfAKind(rt: Map[Rank,Int])(hand: PokerHand): Boolean =
+   */
+  private def isPokerHandFourOfAKind(rt: Map[Rank, Int])(
+      @annotation.unused hand: PokerHand
+  ): Boolean =
     rt.values.exists(_ == 4)
 
-  private def isPokerHandFullHouse(rt: Map[Rank,Int])(hand: PokerHand): Boolean = {
+  private def isPokerHandFullHouse(
+      rt: Map[Rank, Int]
+  )(@annotation.unused hand: PokerHand): Boolean = {
     rt.values.exists(_ == 3) && rt.values.exists(_ == 2)
   }
 
-  private def isPokerHandFlush(hand: PokerHand): Boolean = {
-    hand.toSet.map(_.suit).size == 1
-  }
+  private def isPokerHandFlush(hand: PokerHand): Boolean =
+    hand.suits.distinct.size == 1
 
   private def isPokerHandStraight(hand: PokerHand): Boolean = {
-    straightCards.contains(hand.toSet.map(_.rank))
+    straightCards.contains(hand.ranks.toSet)
   }
 
-  private def isPokerHandThreeOfAKind(rt: Map[Rank,Int])(hand: PokerHand): Boolean =
+  private def isPokerHandThreeOfAKind(rt: Map[Rank, Int])(
+      @annotation.unused hand: PokerHand
+  ): Boolean =
     rt.values.exists(_ == 3)
 
-  private def isPokerHandTwoPair(rt: Map[Rank,Int])(hand: PokerHand): Boolean =
+  private def isPokerHandTwoPair(rt: Map[Rank, Int])(
+      @annotation.unused hand: PokerHand
+  ): Boolean =
     rt.count((_, actualCount) => actualCount == 2) == 2
 
-  private def isPokerHandPair(rt: Map[Rank,Int])(hand: PokerHand): Boolean =
+  private def isPokerHandPair(rt: Map[Rank, Int])(
+      @annotation.unused hand: PokerHand
+  ): Boolean =
     rt.count((_, actualCount) => actualCount == 2) == 1
 
   private val straightCards: List[Set[Rank]] = List(
@@ -315,9 +331,12 @@ object ImprovedSimpleEquityCalculator {
     tripCmp
   }
 
-  private def compareTwoPair(a: PokerHand, b: PokerHand): Int = {
-    val pairsA = ranksForCount(a, 2)
-    val pairsB = ranksForCount(b, 2)
+  private def compareTwoPair(
+      rta: Map[Rank, Int],
+      rtb: Map[Rank, Int]
+  )(a: PokerHand, b: PokerHand): Int = {
+    val pairsA = rta.filter((_, actualCount) => actualCount == 2).keys.toList
+    val pairsB = rtb.filter((_, actualCount) => actualCount == 2).keys.toList
 
     val pairsCmp = compareRankList(pairsA, pairsB)
 
@@ -351,8 +370,8 @@ object ImprovedSimpleEquityCalculator {
     compareRankList(a.toList.map(_.rank), b.toList.map(_.rank))
 
   private def rankTally(x: PokerHand): Map[Rank, Int] =
-    x.toList
-      .groupBy(_.rank)
+    x.ranks
+      .groupMap(identity)(identity)
       .map(item => (item._1, item._2.size))
 
   private def ranksForCount(x: PokerHand, count: Int): List[Rank] =
@@ -362,8 +381,8 @@ object ImprovedSimpleEquityCalculator {
     ranksForCount(x, count).ensuring(_.length < 2).headOption
 
   private def compareRankList(a: List[Rank], b: List[Rank]): Int = {
-    val ra = a.map(_.ordinal).sorted
-    val rb = b.map(_.ordinal).sorted
+    val ra = a.map(_.ordinal).sorted.reverse
+    val rb = b.map(_.ordinal).sorted.reverse
     ra
       .zip(rb)
       .map((oa, ob) => oa - ob)

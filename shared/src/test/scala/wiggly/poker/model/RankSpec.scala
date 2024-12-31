@@ -9,7 +9,7 @@ class RankSpec
     extends AnyFlatSpec
     with TableDrivenPropertyChecks
     with Matchers {
-  
+
   val greaterThanExamples = TableFor2(
     ("a", "b"),
     (Rank.Ace, Rank.King),

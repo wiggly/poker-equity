@@ -2,15 +2,37 @@ package wiggly.poker.equity
 
 import cats.implicits.*
 import cats.Order
-import wiggly.poker.model.{Card, Deck, HoleCards, PokerHand, PokerRankCategory, Rank}
+import wiggly.poker.model.{
+  Card,
+  Deck,
+  HoleCards,
+  PokerHand,
+  PokerRankCategory,
+  Rank
+}
 import wiggly.poker.MathUtil
-import wiggly.poker.equity.EquityCalculator.{Equity, EquityResult, defaultRunSize}
+import wiggly.poker.equity.EquityCalculator.{
+  Equity,
+  EquityResult,
+  defaultRunSize
+}
 import wiggly.poker.equity.*
-import wiggly.poker.model.PokerRankCategory.{Flush, FourOfAKind, FullHouse, HighCard, Pair, Straight, StraightFlush, ThreeOfAKind, TwoPair}
+import wiggly.poker.model.PokerRankCategory.{
+  Flush,
+  FourOfAKind,
+  FullHouse,
+  HighCard,
+  Pair,
+  Straight,
+  StraightFlush,
+  ThreeOfAKind,
+  TwoPair
+}
 
 import math.BigDecimal.int2bigDecimal
+import scala.util.control.Breaks.break
 
-class SimpleEquityCalculator extends EquityCalculator {
+class QuickEquityCalculator extends EquityCalculator {
 
   override def calculate(
       a: HoleCards,
@@ -42,11 +64,9 @@ class SimpleEquityCalculator extends EquityCalculator {
     val maxBoards = MathUtil.nCombK(stub.size.toBigInt, cardsRequired).toInt
 
     // number of boards we intend to evaluate - this should be a parameter?
-//    val count = maxBoards / 3
-//    val count = maxBoards / 5
-    // val count = 5000
+    //    val count = maxBoards / 3
+    //    val count = maxBoards / 5
     val count = EquityCalculator.defaultRunSize
-    // val count = 15000
 
     println(s"stub length: ${stub.toList.size}")
 
@@ -55,7 +75,6 @@ class SimpleEquityCalculator extends EquityCalculator {
       .combinations(cardsRequired)
       .take(count)
       .map(extraBoard => {
-        // System.err.println(extraBoard.map(_.show).mkString);
         generateBoardEquityResult(a, b, board ++ extraBoard)
       })
       .toList
@@ -69,7 +88,7 @@ class SimpleEquityCalculator extends EquityCalculator {
       b: HoleCards,
       board: Set[Card]
   ): (Equity, Equity) = {
-    import SimpleEquityCalculator.orderPokerHand
+    import QuickEquityCalculator.orderPokerHand
 
     val bestA = PokerHand.fromIterable(a.cards ++ board).max
 
@@ -87,10 +106,33 @@ class SimpleEquityCalculator extends EquityCalculator {
   }
 }
 
-object SimpleEquityCalculator {
-
+object QuickEquityCalculator {
   given orderPokerHand: Order[PokerHand] = new Order[PokerHand] {
     override def compare(a: PokerHand, b: PokerHand): Int = {
+      // println(s"COMPARE\n\t${a.show}\n\t${b.show}")
+
+      val qa = QuickPokerHand(a)
+
+      val qb = QuickPokerHand(b)
+
+      if (qa.isHighCard) {
+        if (qb.isHighCard) {
+          // QA and QB are high card - compare ranks
+          QuickPokerHand.compareRanks(qa, qb)
+        } else {
+          // QA is high card, QB is something else, QB must win, whatever it is
+          -1
+        }
+      } else if (qb.isHighCard) {
+        // QB is high card, QA is something else, QA must win, whatever it is
+        1
+      } else {
+        // fallback to improved logic
+        fallbackCompare(qa, qb)
+      }
+    }
+
+    private def fallbackCompare(a: QuickPokerHand, b: QuickPokerHand): Int = {
       //    println("--------------------------------------------------------------------------")
       val prca = pokerHandCategory(a)
       val prcb = pokerHandCategory(b)
@@ -99,103 +141,56 @@ object SimpleEquityCalculator {
 
       if (phrc == 0) {
         val xxx = prca match {
-          case StraightFlush => compareStraightFlush(a, b)
-          case FourOfAKind   => compareFourOfAKind(a, b)
-          case FullHouse     => compareFullHouse(a, b)
-          case Flush         => compareFlush(a, b)
-          case Straight      => compareStraight(a, b)
-          case ThreeOfAKind  => compareThreeOfAKind(a, b)
-          case TwoPair       => compareTwoPair(a, b)
+          case StraightFlush => compareStraightFlush(a.pokerHand, b.pokerHand)
+          case FourOfAKind   => compareFourOfAKind(a.pokerHand, b.pokerHand)
+          case FullHouse     => compareFullHouse(a.pokerHand, b.pokerHand)
+          case Flush         => compareFlush(a.pokerHand, b.pokerHand)
+          case Straight      => compareStraight(a.pokerHand, b.pokerHand)
+          case ThreeOfAKind  => compareThreeOfAKind(a.pokerHand, b.pokerHand)
+          case TwoPair       => compareTwoPair(a.pokerHand, b.pokerHand)
           case Pair          => comparePair(a, b)
-          case HighCard      => compareHighCard(a, b)
+          case HighCard      => compareHighCard(a.pokerHand, b.pokerHand)
         }
         /*
-        if(xxx == 0) {
-          println(s"EXACT SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
-        } else {
-          println(s"SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
-        }
+                if(xxx == 0) {
+                  println(s"EXACT SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
+                } else {
+                  println(s"SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
+                }
          */
         xxx
       } else {
-//        println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.show}\n\t${b.show}")
+        //        println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.show}\n\t${b.show}")
         phrc
       }
     }
   }
 
-  private def pokerHandCategory(hand: PokerHand): PokerRankCategory = {
-    if (isPokerHandStraightFlush(hand)) {
-      StraightFlush
-    } else if (isPokerHandFourOfAKind(hand)) {
-      FourOfAKind
-    } else if (isPokerHandFullHouse(hand)) {
-      FullHouse
-    } else if (isPokerHandFlush(hand)) {
-      Flush
-    } else if (isPokerHandStraight(hand)) {
-      Straight
-    } else if (isPokerHandThreeOfAKind(hand)) {
-      ThreeOfAKind
-    } else if (isPokerHandTwoPair(hand)) {
-      TwoPair
-    } else if (isPokerHandPair(hand)) {
+  private def pokerHandCategory(hand: QuickPokerHand): PokerRankCategory = {
+    if (hand.isHighCard) {
+      HighCard
+    } else if (hand.isPair) {
       Pair
+    } else if (hand.isTwoPair) {
+      TwoPair
+    } else if (hand.isThreeOfAKind) {
+      ThreeOfAKind
+    } else if (hand.isFullHouse) {
+      FullHouse
+    } else if (hand.isFourOfAKind) {
+      FourOfAKind
+    } else if (hand.isStraight) {
+      if (hand.isFlush) {
+        StraightFlush
+      } else {
+        Straight
+      }
+    } else if (hand.isFlush) {
+      Flush
     } else {
       HighCard
     }
   }
-
-  private def isPokerHandStraightFlush(hand: PokerHand): Boolean = {
-    isPokerHandFlush(hand) && isPokerHandStraight(hand)
-  }
-
-  private def isPokerHandFourOfAKind(hand: PokerHand): Boolean = {
-    hand.toList
-      .groupBy(_.rank)
-      .map(item => (item._1, item._2.size))
-      .values
-      .exists(_ == 4)
-  }
-
-  private def isPokerHandFullHouse(hand: PokerHand): Boolean = {
-    isPokerHandThreeOfAKind(hand) && (hand.toSet.map(_.rank).size == 2)
-  }
-
-  private def isPokerHandFlush(hand: PokerHand): Boolean = {
-    hand.toSet.map(_.suit).size == 1
-  }
-
-  private def isPokerHandStraight(hand: PokerHand): Boolean = {
-    straightCards.contains(hand.toSet.map(_.rank))
-  }
-
-  private def isPokerHandThreeOfAKind(hand: PokerHand): Boolean = {
-    hand.toList
-      .groupBy(_.rank)
-      .map(item => (item._1, item._2.size))
-      .values
-      .exists(_ == 3)
-  }
-
-  private def isPokerHandTwoPair(hand: PokerHand): Boolean =
-    ranksForCount(hand, 2).size == 2
-
-  private def isPokerHandPair(hand: PokerHand): Boolean =
-    ranksForCount(hand, 2).size == 1
-
-  private val straightCards: List[Set[Rank]] = List(
-    Set(Rank.Ace, Rank.Two, Rank.Three, Rank.Four, Rank.Five),
-    Set(Rank.Two, Rank.Three, Rank.Four, Rank.Five, Rank.Six),
-    Set(Rank.Three, Rank.Four, Rank.Five, Rank.Six, Rank.Seven),
-    Set(Rank.Four, Rank.Five, Rank.Six, Rank.Seven, Rank.Eight),
-    Set(Rank.Five, Rank.Six, Rank.Seven, Rank.Eight, Rank.Nine),
-    Set(Rank.Six, Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten),
-    Set(Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack),
-    Set(Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen),
-    Set(Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King),
-    Set(Rank.Ten, Rank.Jack, Rank.Queen, Rank.King, Rank.Ace)
-  )
 
   private def compareStraightFlush(a: PokerHand, b: PokerHand): Int = {
     Order.compare(
@@ -271,7 +266,7 @@ object SimpleEquityCalculator {
     )
 
   private def compareStraight(a: PokerHand, b: PokerHand): Int = {
-//    println(s"compare straight indexA: ${straightCards.indexOf(a.toSet.map(_.rank))} - indexB: ${straightCards.indexOf(b.toSet.map(_.rank))}")
+    //    println(s"compare straight indexA: ${straightCards.indexOf(a.toSet.map(_.rank))} - indexB: ${straightCards.indexOf(b.toSet.map(_.rank))}")
 
     Order.compare(
       straightCards.indexOf(a.toSet.map(_.rank)),
@@ -318,21 +313,18 @@ object SimpleEquityCalculator {
     }
   }
 
-  private def comparePair(a: PokerHand, b: PokerHand): Int = {
-    val pairsA = ranksForCount(a, 2)
-    val pairsB = ranksForCount(b, 2)
-
-    val pairsCmp = compareRankList(pairsA, pairsB)
-
-    if (pairsCmp == 0) {
-      compareRankList(
-        a.toList.map(_.rank).filterNot(pairsA.contains),
-        b.toList.map(_.rank).filterNot(pairsB.contains)
-      )
+  private def comparePair(a: QuickPokerHand, b: QuickPokerHand): Int = {
+    val pr = Order.compare(a.pairRank, b.pairRank)
+    if (pr == 0) {
+      QuickPokerHand.compareCountRanks(a, b, 1)
     } else {
-      pairsCmp
+      pr
     }
   }
+
+//  private def comparePair(a: QuickPokerHand, b: QuickPokerHand): Int = {
+//    Order.compare(a.singleRankProduct, b.singleRankProduct)
+  // }
 
   private def compareHighCard(a: PokerHand, b: PokerHand): Int =
     compareRankList(a.toList.map(_.rank), b.toList.map(_.rank))
