@@ -1,12 +1,18 @@
 import cats.implicits.*
+
+import cats.effect.IO
 import wiggly.poker.{model, *}
 import wiggly.poker.equity.*
 import wiggly.poker.model.{Card, HoleCards, Rank, Suit}
 
+import cats.effect.unsafe.implicits.global
+
+
 object Main extends App {
   // val calc = new DummyEquityCalculator()
   // val calc = new SimpleEquityCalculator()
-  val calc = new ImprovedSimpleEquityCalculator()
+  //val calc = new ImprovedSimpleEquityCalculator()
+  val calc = PokerRankEquityCalculator.load[IO]("precomputed.dat").unsafeRunSync()
 
   val result = for {
     a <- HoleCards.create(

@@ -22,7 +22,7 @@ object Benchmark extends IOApp {
   given showBenchmarkResults: Show[BenchmarkResults] =
     new Show[BenchmarkResults] {
       override def show(t: BenchmarkResults): String = {
-        val results = t.results//.drop(2)
+        val results = t.results // .drop(2)
         val totalDuration = results.map(_.runtime).reduce(_ + _)
         val averageDuration = (totalDuration / results.size.toDouble).toSeconds
         val sample = results.last.result.fold(identity, _.show)
@@ -69,21 +69,27 @@ object Benchmark extends IOApp {
   // val calc = new ImprovedSimpleEquityCalculator()
 
   override def run(args: List[String]): IO[ExitCode] = {
-    val subjects = List(
-//      ("simple", new SimpleEquityCalculator()),
-      ("quick", new QuickEquityCalculator()),
-//      ("improved", new ImprovedSimpleEquityCalculator()),
-    )
 
     for {
+      precomputed <- PokerRankEquityCalculator
+        .load[IO]("precomputed.dat")
+
+      subjects = List(
+        //      ("simple", new SimpleEquityCalculator()),
+        ("precomputed-poker-rank", precomputed),
+        //("poker-rank", PokerRankEquityCalculator()),
+        ("quick", new QuickEquityCalculator())
+        //      ("improved", new ImprovedSimpleEquityCalculator()),
+      )
+
       results <- subjects.traverse((name, calc) =>
-        IO.println(s"benchmarking: $name") >> benchmarkImplementation(calc).map(
-          result => (name, result)
-        )
+        IO.println(s"benchmarking: $name") >> benchmarkImplementation(calc)
+          .map(result => (name, result))
       )
       _ <- results.traverse((name, result) =>
         IO.println(s"$name results:\n${result.show}")
       )
     } yield ExitCode.Success
+
   }
 }

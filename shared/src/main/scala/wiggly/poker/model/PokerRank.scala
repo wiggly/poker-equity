@@ -58,7 +58,7 @@ object PokerRank {
     def rank = 0
   }
 
-  given pokerRankOrder: Order[PokerRank] = new Order[PokerRank] {
+  given orderPokerRank: Order[PokerRank] = new Order[PokerRank] {
     override def compare(a: PokerRank, b: PokerRank): Int =
       val result = Order.compare(a.rank, b.rank)
       if (result == 0) {
