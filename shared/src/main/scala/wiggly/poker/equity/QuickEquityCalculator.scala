@@ -115,21 +115,26 @@ object QuickEquityCalculator {
 
       val qb = QuickPokerHand(b)
 
-      if (qa.isHighCard) {
-        if (qb.isHighCard) {
-          // QA and QB are high card - compare ranks
-          QuickPokerHand.compareRanks(qa, qb)
-        } else {
-          // QA is high card, QB is something else, QB must win, whatever it is
-          -1
-        }
-      } else if (qb.isHighCard) {
-        // QB is high card, QA is something else, QA must win, whatever it is
-        1
-      } else {
-        // fallback to improved logic
-        fallbackCompare(qa, qb)
-      }
+      fallbackCompare(qa, qb)
+
+      /*
+            if (qa.isHighCard) {
+              if (qb.isHighCard) {
+                // QA and QB are high card - compare ranks
+                QuickPokerHand.compareRanks(qa, qb)
+              } else {
+                // QA is high card, QB is something else, QB must win, whatever it is
+                -1
+              }
+            } else if (qb.isHighCard) {
+              // QB is high card, QA is something else, QA must win, whatever it is
+              1
+            } else {
+              // fallback to improved logic
+              fallbackCompare(qa, qb)
+            }
+            */
+
     }
 
     private def fallbackCompare(a: QuickPokerHand, b: QuickPokerHand): Int = {
@@ -151,16 +156,16 @@ object QuickEquityCalculator {
           case Pair          => comparePair(a, b)
           case HighCard      => compareHighCard(a.pokerHand, b.pokerHand)
         }
-        /*
+/*
                 if(xxx == 0) {
-                  println(s"EXACT SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
+                  println(s"EXACT SAME HAND RANK $prca ($xxx)\n\t${a.pokerHand.show}\n\t${b.pokerHand.show}")
                 } else {
-                  println(s"SAME HAND RANK $prca ($xxx)\n\t${a.show}\n\t${b.show}")
+                  println(s"SAME HAND RANK $prca ($xxx)\n\t${a.pokerHand.show}\n\t${b.pokerHand.show}")
                 }
-         */
+*/
         xxx
       } else {
-        //        println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.show}\n\t${b.show}")
+  //              println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.pokerHand.show}\n\t${b.pokerHand.show}")
         phrc
       }
     }
@@ -266,8 +271,6 @@ object QuickEquityCalculator {
     )
 
   private def compareStraight(a: PokerHand, b: PokerHand): Int = {
-    //    println(s"compare straight indexA: ${straightCards.indexOf(a.toSet.map(_.rank))} - indexB: ${straightCards.indexOf(b.toSet.map(_.rank))}")
-
     Order.compare(
       straightCards.indexOf(a.toSet.map(_.rank)),
       straightCards.indexOf(b.toSet.map(_.rank))
@@ -349,4 +352,22 @@ object QuickEquityCalculator {
       .find(n => n != 0)
       .getOrElse(0)
   }
+
+
+
+
+
+  private val straightCards: List[Set[Rank]] = List(
+    Set(Rank.Ace, Rank.Two, Rank.Three, Rank.Four, Rank.Five),
+    Set(Rank.Two, Rank.Three, Rank.Four, Rank.Five, Rank.Six),
+    Set(Rank.Three, Rank.Four, Rank.Five, Rank.Six, Rank.Seven),
+    Set(Rank.Four, Rank.Five, Rank.Six, Rank.Seven, Rank.Eight),
+    Set(Rank.Five, Rank.Six, Rank.Seven, Rank.Eight, Rank.Nine),
+    Set(Rank.Six, Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten),
+    Set(Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack),
+    Set(Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen),
+    Set(Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King),
+    Set(Rank.Ten, Rank.Jack, Rank.Queen, Rank.King, Rank.Ace)
+  )
+
 }

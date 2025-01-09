@@ -71,12 +71,16 @@ object Benchmark extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
 
     for {
-      precomputed <- PokerRankEquityCalculator
-        .load[IO]("precomputed.dat")
+//      precomputed <- PokerRankEquityCalculator
+//        .load[IO]("precomputed.dat")
+
+      precomputedOrd <- PokerRankOrdEquityCalculator
+        .load[IO]("poker-rank-ord.dat")
 
       subjects = List(
         //      ("simple", new SimpleEquityCalculator()),
-        ("precomputed-poker-rank", precomputed),
+//        ("precomputed-poker-rank", precomputed),
+        ("precomputed-poker-rank-ord", precomputedOrd),
         //("poker-rank", PokerRankEquityCalculator()),
         ("quick", new QuickEquityCalculator())
         //      ("improved", new ImprovedSimpleEquityCalculator()),

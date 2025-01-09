@@ -12,7 +12,8 @@ object Main extends App {
   // val calc = new DummyEquityCalculator()
   // val calc = new SimpleEquityCalculator()
   //val calc = new ImprovedSimpleEquityCalculator()
-  val calc = PokerRankEquityCalculator.load[IO]("precomputed.dat").unsafeRunSync()
+  //val calc = PokerRankEquityCalculator.load[IO]("precomputed.dat").unsafeRunSync()
+  val calc = PokerRankOrdEquityCalculator.load[IO]("poker-rank-ord.dat").unsafeRunSync()
 
   val result = for {
     a <- HoleCards.create(

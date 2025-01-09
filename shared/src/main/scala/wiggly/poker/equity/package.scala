@@ -1,7 +1,9 @@
 package wiggly.poker
 
 import cats.implicits.*
+import wiggly.poker.equity.ImprovedSimpleEquityCalculator.straightCards
 import wiggly.poker.model.{PokerHand, Rank}
+
 import scala.util.control.Breaks.*
 package object equity {
 
@@ -69,30 +71,14 @@ package object equity {
         (pokerHand.fourth.suit == pokerHand.fifth.suit)
     }
     
-    lazy val isStraight: Boolean = straightRank.isDefined
+    lazy val isStraight: Boolean = 
+      straightCards.contains(pokerHand.ranks.toSet)
 
     lazy val isFullHouse: Boolean =
       distinctRankCount == 2 && allRankOrd.contains(3)
 
     lazy val isFourOfAKind: Boolean = distinctRankCount == 2 && !isFullHouse
-
-    private lazy val straightRank: Option[Int] = {
-      if (distinctRankCount == 5) {
-        val start = allRankOrd.indexWhere(_ != 0)
-        if (
-          allRankOrd(start + 1) != 0 && allRankOrd(
-            start + 2
-          ) != 0 && allRankOrd(start + 3) != 0 && allRankOrd(start + 4) != 0
-        ) {
-          Some(start + 4)
-        } else {
-          None
-        }
-      } else {
-        None
-      }
-    }
-
+    
     def pairRank: Int = {
       //println(s"pairRank: ${allRankOrd.mkString(",")}")
       allRankOrd.indexOf(2)

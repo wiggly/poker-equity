@@ -137,7 +137,6 @@ object Card {
   }
 
   given orderCard: Order[Card] = new Order[Card] {
-
     override def compare(x: Card, y: Card): Int = {
       val rankOrder = Order.compare(x.rank, y.rank)
       if (rankOrder == 0) {

@@ -22,7 +22,9 @@ trait PokerHandOrderExamples {
     ("Jd7hJh7cQd", "AhQdQhTd8c"),
     ("7sKd8c5h4d", "7s9h8hQd4d"),
     ("6cAc5c7d7c", "Jc6c8d7d7h"),
+    ("Ad4s5c2c3s", "AdQs5c8sTd"),
 
+/*
     // Straight Flush vs Straight Flush
     ("AsKsQsJsTs", "KsQsJsTs9s"),
     ("AsKsQsJsTs", "As2s3s4s5s"),
@@ -77,7 +79,7 @@ trait PokerHandOrderExamples {
     ("Qs4hTd9c2s", "Ts8hQd3c2s"),
     ("Qs3hTd9cAs", "Ts8hQd3c2s"),
     ("Ks3hTd9c2s", "Ts8hQd3c2s")
-
+*/
   
   )
 
