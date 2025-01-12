@@ -16,9 +16,9 @@ import scala.annotation.tailrec
 
 
 class PokerRankOrdEquityCalculator(cache: Array[PokerRankOrdEquityCalculator.CacheEntry]) extends EquityCalculator {
-  
-  private val hashCache: Map[Long,Int] = cache.toMap
-  
+
+  assert(!cache.isEmpty)
+
   override def calculate(
                           a: HoleCards,
                           b: HoleCards,
@@ -76,7 +76,7 @@ class PokerRankOrdEquityCalculator(cache: Array[PokerRankOrdEquityCalculator.Cac
                                          b: HoleCards,
                                          board: Set[Card]
                                        ): (Equity, Equity) = {
-//    import PokerRank.orderPokerRank
+    //    import PokerRank.orderPokerRank
 
     val bestA = PokerHand.fromIterable(a.cards ++ board).map(rankHand).max
 
@@ -96,54 +96,37 @@ class PokerRankOrdEquityCalculator(cache: Array[PokerRankOrdEquityCalculator.Cac
   private def rankHand(pokerHand: PokerHand): Int = {
     val key = pokerHand.toBits
 
-    //    lookupCache(key, 0, cache.length - 1)
-    //slowLookupCache(key)
-//        newLookupCache(key, 0, cache.length)
-  //        .orElse(slowLookupCache(key))
-    hashCache
-      .get(key)
+    newLookupCache(key, 0, cache.length)
       .getOrElse[Int](throw new Exception(s"PokerRankOrdEquityCalculator cannot function without a complete lookup table - key: ${key.toBinaryString} - hand: ${pokerHand.show}"))
   }
 
-
-  private def slowLookupCache(key: Long): Option[Int] = {
-    cache.find( (bits,_) => key == bits).map(_._2)
-  }
-
-
   @tailrec
   private def newLookupCache(key: Long, left: Int, right: Int): Option[Int] = {
-    if (right == 0) {
-      println(s"CACHE MISS for key ${key.toBinaryString}")
+    //println(s"LOOKUP $start $finish")
+    if (left > right) {
+      //        println(s"CACHE MISS for key ${key.toBinaryString}")
       None
     } else {
-      //println(s"LOOKUP $start $finish")
-      if (left > right) {
-        println(s"CACHE MISS for key ${key.toBinaryString}")
-        return None
+      val mid = (left + right) / 2
+      val entry = cache(mid)
+
+      if (entry._1 == key) {
+        //          println(s"CACHE HIT for key ${key.toBinaryString}")
+        Some(entry._2)
+      } else if (entry._1 > key) {
+        newLookupCache(key, left, mid - 1)
       } else {
-        val mid = (left + right) / 2
-        val entry = cache(mid)
-
-        if (entry._1 == key) {
-//          println(s"CACHE HIT for key ${key.toBinaryString}")
-
-          Some(entry._2)
-        } else if (entry._1 > key) {
-          newLookupCache(key, left, mid - 1)
-        } else {
-          newLookupCache(key, mid + 1, right)
-        }
+        newLookupCache(key, mid + 1, right)
       }
     }
   }
 
   @tailrec
   private def lookupCache(key: Long, start: Int, finish: Int): Option[Int] = {
-    if(finish == 0) return None
+    if (finish == 0) return None
     //println(s"LOOKUP $start $finish")
 
-    if(finish >= start) {
+    if (finish >= start) {
       val mid = ((finish - start) / 2) + start
       val entry = cache(mid)
 
@@ -163,7 +146,7 @@ class PokerRankOrdEquityCalculator(cache: Array[PokerRankOrdEquityCalculator.Cac
 
 object PokerRankOrdEquityCalculator {
 
-  type CacheEntry = (Long,Int)
+  type CacheEntry = (Long, Int)
 
   def load[F[_]](filename: String)(using F: Sync[F]): F[PokerRankOrdEquityCalculator] = {
     createObjectInputStream(filename)

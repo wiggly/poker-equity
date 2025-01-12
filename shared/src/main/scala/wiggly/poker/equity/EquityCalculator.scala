@@ -20,8 +20,8 @@ object EquityCalculator {
 
   //val defaultRunSize = 5000
   //val defaultRunSize = 50000
-  val defaultRunSize = 150000
-  //val defaultRunSize = 1712304
+  //val defaultRunSize = 150000
+  val defaultRunSize = 1712304
 
   /** @param win
     *   number of wins for this hand

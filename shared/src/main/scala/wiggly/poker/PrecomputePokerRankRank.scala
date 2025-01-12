@@ -58,8 +58,8 @@ object PrecomputePokerRankRank extends IOApp {
             .toArray
 
 
-          sortedRankEntries
-            .foreach( (key, rank) => System.err.println(s"${key.toBinaryString} - $rank"))
+          //sortedRankEntries
+          //  .foreach( (key, rank) => System.err.println(s"${key.toBinaryString} - $rank"))
 
 
           val keySortedOrdEntries = sortedOrdEntries
