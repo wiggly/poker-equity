@@ -15,7 +15,7 @@ import math.BigDecimal.int2bigDecimal
 import scala.annotation.tailrec
 
 
-class PokerRankOrdEquityCalculator(cache: Array[PokerRankOrdEquityCalculator.CacheEntry]) extends EquityCalculator {
+class ShortcutEquityCalculator(cache: Array[PokerRankOrdEquityCalculator.CacheEntry]) extends EquityCalculator {
 
   assert(!cache.isEmpty)
 
@@ -144,7 +144,7 @@ class PokerRankOrdEquityCalculator(cache: Array[PokerRankOrdEquityCalculator.Cac
   }
 }
 
-object PokerRankOrdEquityCalculator {
+object ShortcutEquityCalculator {
 
   type CacheEntry = (Long, Int)
 

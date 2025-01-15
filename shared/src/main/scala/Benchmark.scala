@@ -10,7 +10,7 @@ import scala.concurrent.duration.FiniteDuration
 
 object Benchmark extends IOApp {
 
-  val runs = 2
+  val runs = 5
 
   case class BenchmarkResults(results: Seq[BenchmarkResult])
 
@@ -22,7 +22,7 @@ object Benchmark extends IOApp {
   given showBenchmarkResults: Show[BenchmarkResults] =
     new Show[BenchmarkResults] {
       override def show(t: BenchmarkResults): String = {
-        val results = t.results // .drop(2)
+        val results = t.results.drop(2)
         val totalDuration = results.map(_.runtime).reduce(_ + _)
         val averageDuration = (totalDuration / results.size.toDouble).toSeconds
         val sample = results.last.result.fold(identity, _.show)
@@ -81,9 +81,9 @@ object Benchmark extends IOApp {
         //      ("simple", new SimpleEquityCalculator()),
 //        ("precomputed-poker-rank", precomputed),
         ("precomputed-poker-rank-ord", precomputedOrd),
-        //("poker-rank", PokerRankEquityCalculator()),
-        ("quick", new QuickEquityCalculator())
-        //      ("improved", new ImprovedSimpleEquityCalculator()),
+        ("poker-rank", PokerRankEquityCalculator()),
+        ("quick", new QuickEquityCalculator()),
+        ("improved", new ImprovedSimpleEquityCalculator()),
       )
 
       results <- subjects.traverse((name, calc) =>
