@@ -3,7 +3,7 @@ package wiggly.poker.model
 import cats.Order
 import cats.Show
 import cats.implicits.*
-import wiggly.poker.model.{PokerHand, Rank}
+import wiggly.poker.model.PokerHand
 
 import wiggly.poker.model.*
 

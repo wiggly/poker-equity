@@ -165,7 +165,7 @@ object QuickEquityCalculator {
 */
         xxx
       } else {
-  //              println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.pokerHand.show}\n\t${b.pokerHand.show}")
+//      println(s"DIFF HAND RANK ($prca vs $prcb)\n\t${a.pokerHand.show}\n\t${b.pokerHand.show}")
         phrc
       }
     }
@@ -324,10 +324,6 @@ object QuickEquityCalculator {
       pr
     }
   }
-
-//  private def comparePair(a: QuickPokerHand, b: QuickPokerHand): Int = {
-//    Order.compare(a.singleRankProduct, b.singleRankProduct)
-  // }
 
   private def compareHighCard(a: PokerHand, b: PokerHand): Int =
     compareRankList(a.toList.map(_.rank), b.toList.map(_.rank))

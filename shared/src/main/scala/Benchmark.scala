@@ -24,10 +24,11 @@ object Benchmark extends IOApp {
       override def show(t: BenchmarkResults): String = {
         val results = t.results.drop(2)
         val totalDuration = results.map(_.runtime).reduce(_ + _)
-        val averageDuration = (totalDuration / results.size.toDouble).toSeconds
+        val averageDurationMillis = ((totalDuration / results.size.toDouble).toMillis.toDouble / 1000d)
+        val averageDurationStr = f"$averageDurationMillis%.5f"
         val sample = results.last.result.fold(identity, _.show)
         s"""runs: ${results.size}
-         |average duration: $averageDuration seconds
+         |average duration: $averageDurationStr seconds
          |sample output:
          |$sample
          |""".stripMargin
@@ -64,26 +65,25 @@ object Benchmark extends IOApp {
       result <- calculator.calculate(a, b, Set.empty, Set.empty)
     } yield result
 
-  // val calc = new DummyEquityCalculator()
-  val calc = new SimpleEquityCalculator()
-  // val calc = new ImprovedSimpleEquityCalculator()
-
   override def run(args: List[String]): IO[ExitCode] = {
 
     for {
-//      precomputed <- PokerRankEquityCalculator
+
+//      _ <- IO.println("creating PokerRankEquityCalculator")
+//      precomputedPokerRank <- PokerRankEquityCalculator
 //        .load[IO]("precomputed.dat")
 
-      precomputedOrd <- PokerRankOrdEquityCalculator
+      _ <- IO.println("creating PokerRankOrdEquityCalculator")
+      precomputedPokerRankOrd <- PokerRankOrdEquityCalculator
         .load[IO]("poker-rank-ord.dat")
 
       subjects = List(
-        //      ("simple", new SimpleEquityCalculator()),
-//        ("precomputed-poker-rank", precomputed),
-        ("precomputed-poker-rank-ord", precomputedOrd),
-        ("poker-rank", PokerRankEquityCalculator()),
-        ("quick", new QuickEquityCalculator()),
+//        ("simple", new SimpleEquityCalculator()),
         ("improved", new ImprovedSimpleEquityCalculator()),
+        ("quick", new QuickEquityCalculator()),
+        ("poker-rank", PokerRankEquityCalculator()),
+//        ("precomputed-poker-rank", precomputedPokerRank),
+        ("precomputed-poker-rank-ord", precomputedPokerRankOrd),
       )
 
       results <- subjects.traverse((name, calc) =>

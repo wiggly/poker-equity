@@ -1,10 +1,11 @@
 package wiggly.poker
 
 import cats.implicits.*
-import wiggly.poker.equity.ImprovedSimpleEquityCalculator.straightCards
+import cats.kernel.Order
 import wiggly.poker.model.{PokerHand, Rank}
 
 import scala.util.control.Breaks.*
+
 package object equity {
 
   // rank count  | possible hand
@@ -42,12 +43,12 @@ package object equity {
       c = pokerHand.fifth.rank.ordinal
       xxx.update(c, xxx(c) + 1)
 
-      //println(s"${pokerHand.show} : ${xxx.mkString(",")}")
+      // println(s"${pokerHand.show} : ${xxx.mkString(",")}")
       xxx
     }
 
     private val distinctRankCount: Int = allRankOrd.count(_ != 0)
-    
+
     lazy val isHighCard: Boolean = {
 //      println(s"isHighCard ${pokerHand.show} - distinct rank count: $distinctRankCount")
 
@@ -66,21 +67,21 @@ package object equity {
 
     lazy val isFlush: Boolean = {
       (pokerHand.first.suit == pokerHand.second.suit) &&
-        (pokerHand.second.suit == pokerHand.third.suit) &&
-        (pokerHand.third.suit == pokerHand.fourth.suit) &&
-        (pokerHand.fourth.suit == pokerHand.fifth.suit)
+      (pokerHand.second.suit == pokerHand.third.suit) &&
+      (pokerHand.third.suit == pokerHand.fourth.suit) &&
+      (pokerHand.fourth.suit == pokerHand.fifth.suit)
     }
-    
-    lazy val isStraight: Boolean = 
+
+    lazy val isStraight: Boolean =
       straightCards.contains(pokerHand.ranks.toSet)
 
     lazy val isFullHouse: Boolean =
       distinctRankCount == 2 && allRankOrd.contains(3)
 
     lazy val isFourOfAKind: Boolean = distinctRankCount == 2 && !isFullHouse
-    
+
     def pairRank: Int = {
-      //println(s"pairRank: ${allRankOrd.mkString(",")}")
+      // println(s"pairRank: ${allRankOrd.mkString(",")}")
       allRankOrd.indexOf(2)
     }
   }
@@ -100,38 +101,24 @@ package object equity {
 
   object QuickPokerHand {
 
+
     def compareCountRanks(
-        a: QuickPokerHand,
-        b: QuickPokerHand,
-        count: Int
-    ): Int = {
-      //     println(s"compare ranks:\n\t${a.allRankOrd.mkString(",")}\n\t${b.allRankOrd.mkString(",")}")
+                           a: QuickPokerHand,
+                           b: QuickPokerHand,
+                           count: Int
+                         ): Int = {
+      //println(s"compare ranks:\n\t${a.allRankOrd.mkString(",")}\n\t${b.allRankOrd.mkString(",")}");
 
-      val ca = a.allRankOrd
-      val cb = b.allRankOrd
+      val ca = a.allRankOrd.map(n => if(n > 0 && n != count) { 0 } else { n })
+      val cb = b.allRankOrd.map(n => if(n > 0 && n != count) { 0 } else { n })
 
-      var idx = ca.length - 1
-
-        while (idx >= 0) {
-          breakable {
-            val cav = ca(idx)
-          if (cav != 0 && cav != count) break();
-
-          val cbv = cb(idx)
-          if (cbv != 0 && cbv != count) break();
-
-          // terminate early if one is bigger
-          if (cav > cbv) {
-            return 1
-          } else if (cbv > cav) {
-            return -1
-          }
-          }
-          idx = idx - 1
-      }
-
-      // default equality at the end
-      return 0
+      ca.zip(cb).reverse.foldLeft(0)( (acc, p) => {
+        if(acc == 0) {
+          Order.compare(p._1, p._2)
+        } else {
+          acc
+        }
+      })
     }
 
     def compareRanks(a: QuickPokerHand, b: QuickPokerHand): Int = {
@@ -150,35 +137,7 @@ package object equity {
       }
 
       // default equality at the end
-      return 0
-
-      // hand-unrolled loop
-      // TODO: do we need to do this with arrays or not?
-      /*
-      if (a.rankOrd(4) > b.rankOrd(4)) {
-        1
-      } else if (a.rankOrd(4) < b.rankOrd(4)) {
-        -1
-      } else if (a.rankOrd(3) > b.rankOrd(3)) {
-        1
-      } else if (a.rankOrd(3) < b.rankOrd(3)) {
-        -1
-      } else if (a.rankOrd(2) > b.rankOrd(2)) {
-        1
-      } else if (a.rankOrd(2) < b.rankOrd(2)) {
-        -1
-      } else if (a.rankOrd(1) > b.rankOrd(1)) {
-        1
-      } else if (a.rankOrd(1) < b.rankOrd(1)) {
-        -1
-      } else if (a.rankOrd(0) > b.rankOrd(0)) {
-        1
-      } else if (a.rankOrd(0) < b.rankOrd(0)) {
-        -1
-      } else {
-        0
-      }
-       */
+      0
     }
 
   }
