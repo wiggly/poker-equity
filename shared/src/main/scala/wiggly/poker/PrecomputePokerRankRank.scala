@@ -29,7 +29,7 @@ object PrecomputePokerRankRank extends IOApp {
         for {
           cache <- IO(createCache())
           _ <- writeCache[IO](out, cache)
-          _ <- IO(println(s"wrote entries to file"))
+          _ <- IO(println("wrote entries to file"))
         } yield ()
       )
   }

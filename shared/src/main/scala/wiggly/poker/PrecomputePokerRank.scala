@@ -1,6 +1,5 @@
 package wiggly.poker
 
-import cats.implicits.*
 import cats.effect.*
 import wiggly.poker.model.*
 
@@ -18,10 +17,10 @@ object PrecomputePokerRank extends IOApp {
         IO {
           val array = PokerHand
             .fromIterable(Deck.create.toList)
-            //.take(250000)
+            // .take(250000)
             .map(hand => {
               val result = (hand.toBits, PokerRank.rankHand(hand))
-              //println(s"${hand.show} => ${result._1.toBinaryString}")
+              // println(s"${hand.show} => ${result._1.toBinaryString}")
               result
             })
             .toArray

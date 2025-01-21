@@ -4,8 +4,6 @@ import cats.implicits.*
 import cats.kernel.Order
 import wiggly.poker.model.{PokerHand, Rank}
 
-import scala.util.control.Breaks.*
-
 package object equity {
 
   // rank count  | possible hand
@@ -101,24 +99,31 @@ package object equity {
 
   object QuickPokerHand {
 
-
     def compareCountRanks(
-                           a: QuickPokerHand,
-                           b: QuickPokerHand,
-                           count: Int
-                         ): Int = {
-      //println(s"compare ranks:\n\t${a.allRankOrd.mkString(",")}\n\t${b.allRankOrd.mkString(",")}");
+        a: QuickPokerHand,
+        b: QuickPokerHand,
+        count: Int
+    ): Int = {
+      // println(s"compare ranks:\n\t${a.allRankOrd.mkString(",")}\n\t${b.allRankOrd.mkString(",")}");
 
-      val ca = a.allRankOrd.map(n => if(n > 0 && n != count) { 0 } else { n })
-      val cb = b.allRankOrd.map(n => if(n > 0 && n != count) { 0 } else { n })
+      val ca = a.allRankOrd.map(n =>
+        if (n > 0 && n != count) { 0 }
+        else { n }
+      )
+      val cb = b.allRankOrd.map(n =>
+        if (n > 0 && n != count) { 0 }
+        else { n }
+      )
 
-      ca.zip(cb).reverse.foldLeft(0)( (acc, p) => {
-        if(acc == 0) {
-          Order.compare(p._1, p._2)
-        } else {
-          acc
-        }
-      })
+      ca.zip(cb)
+        .reverse
+        .foldLeft(0)((acc, p) => {
+          if (acc == 0) {
+            Order.compare(p._1, p._2)
+          } else {
+            acc
+          }
+        })
     }
 
     def compareRanks(a: QuickPokerHand, b: QuickPokerHand): Int = {

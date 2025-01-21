@@ -1,27 +1,27 @@
 package wiggly.poker.equity
 
-import cats.effect.{IO, Resource, Sync}
+import cats.effect.{Resource, Sync}
 import cats.implicits.*
-import cats.{Applicative, Order}
-import wiggly.poker.model.{Card, Deck, HoleCards, PokerHand, PokerRank, PokerRankCategory, Rank}
+import cats.Order
+import wiggly.poker.model.{Card, Deck, HoleCards, PokerHand, PokerRank}
 import wiggly.poker.MathUtil
-import wiggly.poker.equity.EquityCalculator.{Equity, EquityResult, defaultRunSize}
+import wiggly.poker.equity.EquityCalculator.{Equity, EquityResult}
 import wiggly.poker.equity.*
-import wiggly.poker.equity.PrecomputedPokerRankLoader.Entry
-import wiggly.poker.model.PokerRankCategory.{Flush, FourOfAKind, FullHouse, HighCard, Pair, Straight, StraightFlush, ThreeOfAKind, TwoPair}
 
 import java.io.{FileInputStream, ObjectInputStream}
 import math.BigDecimal.int2bigDecimal
 
-
-class PokerRankEquityCalculator(cache: Array[PokerRankEquityCalculator.CacheEntry]) extends EquityCalculator {
+class PokerRankEquityCalculator(
+    cache: Array[PokerRankEquityCalculator.CacheEntry]
+) extends EquityCalculator {
 
   override def calculate(
-                          a: HoleCards,
-                          b: HoleCards,
-                          board: Set[Card],
-                          dead: Set[Card]
-                        ): Either[String, EquityCalculator.EquityResult] = {
+      a: HoleCards,
+      b: HoleCards,
+      board: Set[Card],
+      dead: Set[Card],
+      coverage: Option[Float]
+  ): Either[String, EquityCalculator.EquityResult] = {
     val cardCount = (HoleCards.size * 2) + board.size + dead.size
     val usedCards = a.cards ++ b.cards ++ board ++ dead
     val stub = Deck.create.removeAll(usedCards)
@@ -30,29 +30,27 @@ class PokerRankEquityCalculator(cache: Array[PokerRankEquityCalculator.CacheEntr
       "A single card cannot be used by more than one hand or the board or dead"
         .asLeft[EquityResult]
     } else {
-      generateEquityResult(a, b, board, stub).asRight[String]
+      generateEquityResult(a, b, board, stub, coverage).asRight[String]
     }
   }
 
   private def generateEquityResult(
-                                    a: HoleCards,
-                                    b: HoleCards,
-                                    board: Set[Card],
-                                    stub: Deck
-                                  ): EquityResult = {
+      a: HoleCards,
+      b: HoleCards,
+      board: Set[Card],
+      stub: Deck,
+      coverage: Option[Float]
+  ): EquityResult = {
     val cardsRequired = 5 - board.size
 
     // maximum number of distinct boards we need to evaluate with the given hole cards to exhaustively generate equity
     val maxBoards = MathUtil.nCombK(stub.size.toBigInt, cardsRequired).toInt
 
-    // number of boards we intend to evaluate - this should be a parameter?
-    //    val count = maxBoards / 3
-    //    val count = maxBoards / 5
-    // val count = 5000
-    val count = EquityCalculator.defaultRunSize
-    // val count = 15000
-
-    println(s"stub length: ${stub.toList.size}")
+    // val count = EquityCalculator.defaultRunSize
+    val count = EquityCalculator.boardCountForPercentage(maxBoards, coverage)
+    println(
+      s"maxBoards: $maxBoards - coverage: ${coverage} - boards to examine: $count"
+    )
 
     // generate permutations of stub to generate boards and generate an equity result for the hole cards for that board
     val xxx: (Equity, Equity) = stub.toList.sorted
@@ -69,10 +67,10 @@ class PokerRankEquityCalculator(cache: Array[PokerRankEquityCalculator.CacheEntr
   }
 
   private def generateBoardEquityResult(
-                                         a: HoleCards,
-                                         b: HoleCards,
-                                         board: Set[Card]
-                                       ): (Equity, Equity) = {
+      a: HoleCards,
+      b: HoleCards,
+      board: Set[Card]
+  ): (Equity, Equity) = {
     import PokerRank.orderPokerRank
 
     val bestA = PokerHand.fromIterable(a.cards ++ board).map(rankHand).max
@@ -97,14 +95,15 @@ class PokerRankEquityCalculator(cache: Array[PokerRankEquityCalculator.CacheEntr
       .getOrElse(PokerRank.rankHand(pokerHand))
   }
 
-
-
-
-  private def lookupCache(key: Long, start: Int, finish: Int): Option[PokerRank] = {
-    if(finish == 0) return None
+  private def lookupCache(
+      key: Long,
+      start: Int,
+      finish: Int
+  ): Option[PokerRank] = {
+    if (finish == 0) return None
     //    println(s"LOOKUP $start $finish")
 
-    if(finish >= start) {
+    if (finish >= start) {
       val mid = ((finish - start) / 2) + start
       val entry = cache(mid)
 
@@ -117,7 +116,7 @@ class PokerRankEquityCalculator(cache: Array[PokerRankEquityCalculator.CacheEntr
         lookupCache(key, mid + 1, finish)
       }
     } else {
-      println(s"CACHE MISS")
+      println("CACHE MISS")
       None
     }
   }
@@ -125,29 +124,33 @@ class PokerRankEquityCalculator(cache: Array[PokerRankEquityCalculator.CacheEntr
 
 object PokerRankEquityCalculator {
 
-  type CacheEntry = (Long,PokerRank)
+  type CacheEntry = (Long, PokerRank)
 
   def apply(): PokerRankEquityCalculator = {
     new PokerRankEquityCalculator(Array.empty[CacheEntry])
   }
 
-  def load[F[_]](filename: String)(using F: Sync[F]): F[PokerRankEquityCalculator] = {
+  def load[F[_]](
+      filename: String
+  )(using F: Sync[F]): F[PokerRankEquityCalculator] = {
     createObjectInputStream(filename)
       .use(input =>
-          for {
-            cache <- F.delay(input.readObject().asInstanceOf[Array[CacheEntry]])
-            _ <- F.delay(println(s"Loaded ${cache.length} entries"))
-            sortedCache = cache.sortBy(_._1)
-            _ <- F.delay(println(s"Sorted cache"))
-          } yield new PokerRankEquityCalculator(sortedCache)
+        for {
+          cache <- F.delay(input.readObject().asInstanceOf[Array[CacheEntry]])
+          _ <- F.delay(println(s"Loaded ${cache.length} entries"))
+          sortedCache = cache.sortBy(_._1)
+          _ <- F.delay(println("Sorted cache"))
+        } yield new PokerRankEquityCalculator(sortedCache)
       )
   }
 
   private def createObjectInputStream[F[_]](
-                                       name: String
-                                     )(using F: Sync[F]): Resource[F, ObjectInputStream] = {
+      name: String
+  )(using F: Sync[F]): Resource[F, ObjectInputStream] = {
     Resource
-      .make(F.delay(new FileInputStream(name)))(fileIn => F.delay(fileIn.close()))
+      .make(F.delay(new FileInputStream(name)))(fileIn =>
+        F.delay(fileIn.close())
+      )
       .evalMap(fileIn => F.delay(new ObjectInputStream(fileIn)))
   }
 }

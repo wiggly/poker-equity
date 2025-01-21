@@ -12,7 +12,7 @@ package object model {
   opaque type Deck = Set[Card]
 
   object Deck {
-    val complete = {
+    val complete: Set[Card] = {
       (for {
         s <- Suit.values
         r <- Rank.values
@@ -73,10 +73,10 @@ package object model {
     extension (hand: PokerHand) {
       def toBits: Long = {
         1L << (hand._1.rank.ordinal + (hand._1.suit.ordinal * 13)) |
-        1L << (hand._2.rank.ordinal + (hand._2.suit.ordinal * 13)) |
-        1L << (hand._3.rank.ordinal + (hand._3.suit.ordinal * 13)) |
-        1L << (hand._4.rank.ordinal + (hand._4.suit.ordinal * 13)) |
-        1L << (hand._5.rank.ordinal + (hand._5.suit.ordinal * 13))
+          1L << (hand._2.rank.ordinal + (hand._2.suit.ordinal * 13)) |
+          1L << (hand._3.rank.ordinal + (hand._3.suit.ordinal * 13)) |
+          1L << (hand._4.rank.ordinal + (hand._4.suit.ordinal * 13)) |
+          1L << (hand._5.rank.ordinal + (hand._5.suit.ordinal * 13))
       }
 
       def toSet: Set[Card] = Set(hand._1, hand._2, hand._3, hand._4, hand._5)

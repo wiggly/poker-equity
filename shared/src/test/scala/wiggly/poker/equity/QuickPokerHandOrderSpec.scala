@@ -19,7 +19,7 @@ class QuickPokerHandOrderSpec
       testOrder(order, (a, b), _ > 0)
     }
   }
-/*
+
   it should "correctly identify inverted greater than examples" in {
     forAll(greaterThanExamples) { (a: String, b: String) =>
       testOrder(order, (b, a), _ < 0)
@@ -37,5 +37,4 @@ class QuickPokerHandOrderSpec
       testOrder(order, (b, a), _ == 0)
     }
   }
-*/
 }

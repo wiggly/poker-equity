@@ -25,7 +25,6 @@ trait PokerHandOrderExamples {
     ("Ad4s5c2c3s", "AdQs5c8sTd"),
     ("AdJdAsKs6d", "Ad3dAs4d6d"),
 
-/*
     // Straight Flush vs Straight Flush
     ("AsKsQsJsTs", "KsQsJsTs9s"),
     ("AsKsQsJsTs", "As2s3s4s5s"),
@@ -80,10 +79,7 @@ trait PokerHandOrderExamples {
     ("Qs4hTd9c2s", "Ts8hQd3c2s"),
     ("Qs3hTd9cAs", "Ts8hQd3c2s"),
     ("Ks3hTd9c2s", "Ts8hQd3c2s")
-*/
-  
   )
-
 
   val generatedEqualExamples: List[(String, String)] =
     greaterThanExamples.toList.flatMap(pair =>
@@ -110,7 +106,6 @@ trait PokerHandOrderExamples {
       predicate: Int => Boolean
   ): Assertion = {
     val input = parseExample(example)
-    val oc = order.compare(input._1, input._2)
     predicate(order.compare(input._1, input._2)) shouldEqual (true)
   }
 

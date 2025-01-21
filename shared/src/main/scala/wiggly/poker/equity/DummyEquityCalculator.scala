@@ -9,7 +9,8 @@ class DummyEquityCalculator extends EquityCalculator {
       a: HoleCards,
       b: HoleCards,
       board: Set[Card],
-      dead: Set[Card]
+      dead: Set[Card],
+      coverage: Option[Float]
   ): Either[String, EquityCalculator.EquityResult] = {
     EquityResult(0, 0, (a, Equity(0, 0, 0)), (b, Equity(0, 0, 0)))
       .asRight[String]

@@ -1,6 +1,5 @@
 package wiggly.poker.equity
 
-import cats.implicits.*
 import cats.kernel.Order
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -10,7 +9,7 @@ import wiggly.poker.model.PokerHand
 import wiggly.poker.model.Deck
 
 class QuickVsImprovedSimpleParitySpec
-  extends AnyFlatSpec
+    extends AnyFlatSpec
     with ScalaCheckPropertyChecks
     with Matchers {
 

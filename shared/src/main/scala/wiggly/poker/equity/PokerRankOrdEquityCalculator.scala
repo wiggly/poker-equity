@@ -5,24 +5,12 @@ import cats.implicits.*
 import cats.Order
 import wiggly.poker.model.{Card, Deck, HoleCards, PokerHand}
 import wiggly.poker.MathUtil
-import wiggly.poker.equity.EquityCalculator.{
-  Equity,
-  EquityResult,
-  defaultRunSize
-}
+import wiggly.poker.equity.EquityCalculator.{Equity, EquityResult}
 import wiggly.poker.equity.*
 
-import java.io.{
-  DataInputStream,
-  FileInputStream,
-  IOException,
-  ObjectInputStream
-}
+import java.io.{DataInputStream, FileInputStream, IOException}
 import math.BigDecimal.int2bigDecimal
 import scala.annotation.tailrec
-import scala.collection.mutable.ArrayBuffer
-import scala.util.boundary
-import scala.util.boundary.break
 
 class PokerRankOrdEquityCalculator(
     cache: Array[PokerRankOrdEquityCalculator.CacheEntry]
@@ -34,7 +22,8 @@ class PokerRankOrdEquityCalculator(
       a: HoleCards,
       b: HoleCards,
       board: Set[Card],
-      dead: Set[Card]
+      dead: Set[Card],
+      coverage: Option[Float]
   ): Either[String, EquityCalculator.EquityResult] = {
     val cardCount = (HoleCards.size * 2) + board.size + dead.size
     val usedCards = a.cards ++ b.cards ++ board ++ dead
@@ -44,7 +33,7 @@ class PokerRankOrdEquityCalculator(
       "A single card cannot be used by more than one hand or the board or dead"
         .asLeft[EquityResult]
     } else {
-      generateEquityResult(a, b, board, stub).asRight[String]
+      generateEquityResult(a, b, board, stub, coverage).asRight[String]
     }
   }
 
@@ -52,17 +41,19 @@ class PokerRankOrdEquityCalculator(
       a: HoleCards,
       b: HoleCards,
       board: Set[Card],
-      stub: Deck
+      stub: Deck,
+      coverage: Option[Float]
   ): EquityResult = {
     val cardsRequired = 5 - board.size
 
     // maximum number of distinct boards we need to evaluate with the given hole cards to exhaustively generate equity
     val maxBoards = MathUtil.nCombK(stub.size.toBigInt, cardsRequired).toInt
 
-    // number of boards we intend to evaluate - this should be a parameter?
-    val count = EquityCalculator.defaultRunSize
-
-    println(s"stub length: ${stub.toList.size}")
+    // val count = EquityCalculator.defaultRunSize
+    val count = EquityCalculator.boardCountForPercentage(maxBoards, coverage)
+    println(
+      s"maxBoards: $maxBoards - coverage: ${coverage} - boards to examine: $count"
+    )
 
     // generate permutations of stub to generate boards and generate an equity result for the hole cards for that board
     val xxx: (Equity, Equity) = stub.toList.sorted
@@ -146,7 +137,7 @@ object PokerRankOrdEquityCalculator {
   private def loadCache[F[_]](
       in: DataInputStream
   )(using F: Sync[F]): F[Array[CacheEntry]] = F.delay {
-    println(s"load cache")
+    println("load cache")
     val size: Int = in.readInt()
     val data = Array.ofDim[CacheEntry](size)
 
@@ -165,7 +156,7 @@ object PokerRankOrdEquityCalculator {
       }
     } catch {
       case _: IOException => {
-        println(s"exception whilst reading in cache data, found end of file?")
+        println("exception whilst reading in cache data, found end of file?")
       }
     } finally {
       in.close()

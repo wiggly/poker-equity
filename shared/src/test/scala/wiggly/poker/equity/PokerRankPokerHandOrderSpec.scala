@@ -8,7 +8,7 @@ import wiggly.poker.model.*
 import wiggly.poker.model.PokerRank
 
 class PokerRankPokerHandOrderSpec
-  extends AnyFlatSpec
+    extends AnyFlatSpec
     with TableDrivenPropertyChecks
     with Matchers
     with PokerHandOrderExamples {

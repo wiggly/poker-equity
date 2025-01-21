@@ -1,6 +1,5 @@
 package wiggly.poker.equity
 
-import cats.implicits.*
 import cats.kernel.Order
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

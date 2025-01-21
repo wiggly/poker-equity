@@ -7,9 +7,10 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import org.scalacheck.{Arbitrary, Gen}
 import wiggly.search.*
 
-class LinearSortedSearchSpec extends AnyFlatSpec
-  with ScalaCheckPropertyChecks
-  with Matchers {
+class LinearSortedSearchSpec
+    extends AnyFlatSpec
+    with ScalaCheckPropertyChecks
+    with Matchers {
 
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(
     minSuccessful = 10

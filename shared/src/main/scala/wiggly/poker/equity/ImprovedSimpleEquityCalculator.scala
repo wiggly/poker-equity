@@ -34,7 +34,8 @@ class ImprovedSimpleEquityCalculator extends EquityCalculator {
       a: HoleCards,
       b: HoleCards,
       board: Set[Card],
-      dead: Set[Card]
+      dead: Set[Card],
+      coverage: Option[Float]
   ): Either[String, EquityCalculator.EquityResult] = {
     val cardCount = (HoleCards.size * 2) + board.size + dead.size
     val usedCards = a.cards ++ b.cards ++ board ++ dead
@@ -44,7 +45,7 @@ class ImprovedSimpleEquityCalculator extends EquityCalculator {
       "A single card cannot be used by more than one hand or the board or dead"
         .asLeft[EquityResult]
     } else {
-      generateEquityResult(a, b, board, stub).asRight[String]
+      generateEquityResult(a, b, board, stub, coverage).asRight[String]
     }
   }
 
@@ -52,21 +53,19 @@ class ImprovedSimpleEquityCalculator extends EquityCalculator {
       a: HoleCards,
       b: HoleCards,
       board: Set[Card],
-      stub: Deck
+      stub: Deck,
+      coverage: Option[Float]
   ): EquityResult = {
     val cardsRequired = 5 - board.size
 
     // maximum number of distinct boards we need to evaluate with the given hole cards to exhaustively generate equity
     val maxBoards = MathUtil.nCombK(stub.size.toBigInt, cardsRequired).toInt
 
-    // number of boards we intend to evaluate - this should be a parameter?
-    //    val count = maxBoards / 3
-    //    val count = maxBoards / 5
-    // val count = 5000
-    val count = EquityCalculator.defaultRunSize
-    // val count = 15000
-
-    println(s"stub length: ${stub.toList.size}")
+    // val count = EquityCalculator.defaultRunSize
+    val count = EquityCalculator.boardCountForPercentage(maxBoards, coverage)
+    println(
+      s"maxBoards: $maxBoards - coverage: ${coverage} - boards to examine: $count"
+    )
 
     // generate permutations of stub to generate boards and generate an equity result for the hole cards for that board
     val xxx: (Equity, Equity) = stub.toList.sorted

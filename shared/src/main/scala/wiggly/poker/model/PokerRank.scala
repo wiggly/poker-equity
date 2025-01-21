@@ -1,7 +1,6 @@
 package wiggly.poker.model
 
 import cats.Order
-import cats.Show
 import cats.implicits.*
 import wiggly.poker.model.PokerHand
 
@@ -13,9 +12,8 @@ sealed trait PokerRank {
 
 object PokerRank {
 
-  /**
-   * Bitset containing the Rank ordinals of the cards present
-   */
+  /** Bitset containing the Rank ordinals of the cards present
+    */
   type Kickers = Int
 
   final case class StraightFlush(highRank: Rank) extends PokerRank {
@@ -123,6 +121,8 @@ object PokerRank {
 
           case (HighCard(aKickers), HighCard(bKickers)) =>
             Order.compare(aKickers, bKickers)
+
+          case _ => result
         }
       } else {
         result
@@ -148,45 +148,66 @@ object PokerRank {
         (pokerHand.third.suit == pokerHand.fourth.suit) &&
         (pokerHand.fourth.suit == pokerHand.fifth.suit)
 
-    if(straightKickers.contains(kickers)) {
+    if (straightKickers.contains(kickers)) {
       // calculate high straight rank - ignore Ace if wheel
-      val straightHighrank = if (pokerHand.ranks.contains(Rank.Ace) && pokerHand.ranks.contains(Rank.Two)) {
-        Rank.Five
-      } else {
-        pokerHand.ranks.max
-      }
+      val straightHighrank =
+        if (
+          pokerHand.ranks
+            .contains(Rank.Ace) && pokerHand.ranks.contains(Rank.Two)
+        ) {
+          Rank.Five
+        } else {
+          pokerHand.ranks.max
+        }
 
       // straight or straight flush
-      if(flush) {
+      if (flush) {
         StraightFlush(straightHighrank)
       } else {
         Straight(straightHighrank)
       }
-    } else if(flush) {
+    } else if (flush) {
       // flush
       Flush(kickers)
     } else {
       val rankCounts = countRank(pokerHand)
 
-      if(rankCounts.contains(4)) {
+      if (rankCounts.contains(4)) {
         // quads
-        FourOfAKind(Rank.fromOrdinal(rankCounts.indexOf(4)), Rank.fromOrdinal(rankCounts.indexOf(1)))
-      } else if(rankCounts.contains(3) && rankCounts.contains(2)) {
+        FourOfAKind(
+          Rank.fromOrdinal(rankCounts.indexOf(4)),
+          Rank.fromOrdinal(rankCounts.indexOf(1))
+        )
+      } else if (rankCounts.contains(3) && rankCounts.contains(2)) {
         // boat
-        FullHouse(Rank.fromOrdinal(rankCounts.indexOf(3)), Rank.fromOrdinal(rankCounts.indexOf(2)))
-      } else if(rankCounts.contains(3)) {
+        FullHouse(
+          Rank.fromOrdinal(rankCounts.indexOf(3)),
+          Rank.fromOrdinal(rankCounts.indexOf(2))
+        )
+      } else if (rankCounts.contains(3)) {
         // trips
-        ThreeOfAKind(Rank.fromOrdinal(rankCounts.indexOf(3)), rankCountKickers(rankCounts))
+        ThreeOfAKind(
+          Rank.fromOrdinal(rankCounts.indexOf(3)),
+          rankCountKickers(rankCounts)
+        )
       } else if (rankCounts.contains(2)) {
-        if(rankCounts.count(n => n != 0) == 3) {
+        if (rankCounts.count(n => n != 0) == 3) {
           // 2P
           TwoPair(
-            rankCountKickers(rankCounts.map(n => if(n>0) { n-1} else { n })),
+            rankCountKickers(
+              rankCounts.map(n =>
+                if (n > 0) { n - 1 }
+                else { n }
+              )
+            ),
             Rank.fromOrdinal(rankCounts.indexOf(1))
           )
         } else {
           // P
-          Pair(Rank.fromOrdinal(rankCounts.indexOf(2)), rankCountKickers(rankCounts))
+          Pair(
+            Rank.fromOrdinal(rankCounts.indexOf(2)),
+            rankCountKickers(rankCounts)
+          )
         }
       } else {
         HighCard(kickers)
@@ -194,25 +215,24 @@ object PokerRank {
     }
   }
 
+  /*
   /**
    * Generate Kickers from PokerHand
    */
   private def pokerHandKickers(pokerHand: PokerHand): Kickers =
     ranksKickers(pokerHand.ranks)
-
-  /**
-   * Generate Kickers from ranks
    */
+  /** Generate Kickers from ranks
+    */
   private def ranksKickers(ranks: IterableOnce[Rank]): Kickers = {
     ranks.iterator.foldLeft[Kickers](0)((acc, bit) => acc | (1 << bit.ordinal))
   }
 
-  /**
-   * Generate Kickers from rank counts - only count singles
-   */
+  /** Generate Kickers from rank counts - only count singles
+    */
   private def rankCountKickers(counts: IterableOnce[Int]): Kickers = {
     counts.iterator.zipWithIndex.foldLeft[Kickers](0)((acc, countIndex) =>
-      if(countIndex._1 == 1) {
+      if (countIndex._1 == 1) {
         acc | (1 << countIndex._2)
       } else {
         acc
@@ -220,9 +240,8 @@ object PokerRank {
     )
   }
 
-  /**
-   * Construct all Kickers that represent straights
-   */
+  /** Construct all Kickers that represent straights
+    */
   val straightKickers: Array[Kickers] = {
     val values = Rank.values.reverse
     val ace = values.head

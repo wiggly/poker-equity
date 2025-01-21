@@ -1,10 +1,9 @@
 package wiggly.poker.model
 
 import cats.implicits.*
-import cats.kernel.Order
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import wiggly.poker.model.Card.*
 
 import scala.util.Random

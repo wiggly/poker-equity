@@ -6,23 +6,36 @@ import wiggly.poker.equity.EquityCalculator.EquityResult
 import wiggly.poker.model.{Card, HoleCards}
 
 trait EquityCalculator {
-  // two hands, make generic for multiple later
-  // do we assume that there are no repeated cards amongst our inputs or check it?
+
+  /** *
+    * @param a
+    *   Hand A
+    * @param b
+    *   Hand B
+    * @param board
+    *   current set of board cards already on table
+    * @param dead
+    *   dead cards not available to the board
+    * @param coverage
+    *   Percentage of board-space to cover. None == entire space. values will be
+    *   clamped between 1.0 and 0.0
+    */
   def calculate(
       a: HoleCards,
       b: HoleCards,
       board: Set[Card],
-      dead: Set[Card]
+      dead: Set[Card],
+      coverage: Option[Float]
   ): Either[String, EquityResult]
 }
 
 object EquityCalculator {
 
-  //val defaultRunSize = 5000
+  // val defaultRunSize = 5000
   val defaultRunSize = 50000
-  //val defaultRunSize = 150000
-  //val defaultRunSize = 350000
-  //val defaultRunSize = 1712304
+  // val defaultRunSize = 150000
+  // val defaultRunSize = 350000
+  // val defaultRunSize = 1712304
 
   /** @param win
     *   number of wins for this hand
@@ -76,4 +89,13 @@ object EquityCalculator {
     }
   }
 
+  def boardCountForPercentage(maxCount: Int, percentage: Option[Float]): Int = {
+    val factor = percentage
+      .map(p => {
+        Math.min(Math.max(0.0f, p), 1.0f)
+      })
+      .getOrElse(1.0f)
+
+    (maxCount.toFloat * factor).toInt
+  }
 }

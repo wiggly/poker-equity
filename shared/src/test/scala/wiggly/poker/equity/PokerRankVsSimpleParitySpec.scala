@@ -1,6 +1,5 @@
 package wiggly.poker.equity
 
-import cats.implicits.*
 import cats.kernel.Order
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -30,7 +29,9 @@ class PokerRankVsSimpleParitySpec
 
   it should "produce the same results for all inputs" in {
     forAll { (a: PokerHand, b: PokerHand) =>
-      assert(simpleOrder.compare(a, b).sign == pokerRankOrder.compare(a, b).sign)
+      assert(
+        simpleOrder.compare(a, b).sign == pokerRankOrder.compare(a, b).sign
+      )
     }
   }
 
